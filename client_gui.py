@@ -1,15 +1,3 @@
-"""
-client_gui.py — Modalità GUI (tkinter).
-
-Fix rispetto alla v2:
-  - Play again: overlay frame nella stessa finestra (non Toplevel separato).
-  - Negoziazione configurazione: schermata per accettare o contro-proporre.
-
-Regola fondamentale tkinter + Pyro5:
-  Le callback arrivano nel thread del daemon → root.after(0, fn) per
-  aggiornare i widget sul main thread in modo sicuro.
-"""
-
 import tkinter as tk
 from tkinter import ttk
 import threading
