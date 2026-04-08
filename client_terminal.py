@@ -170,44 +170,49 @@ def run_terminal(player_name: str):
     player_id = server.register_player(player_name, str(uri))
     print(f"[CLIENT] Connesso come {player_id}.\n")
 
-    # ── Negoziazione configurazione 
-    if player_id == "player_1":
-        ev_choose_config.wait()
-        cfg_name, cfg_ships = choose_config_terminal()
-        print(f"\n  ✓ Proposta inviata: {cfg_name}. In attesa dell'avversario...")
-        server.submit_ship_config(player_id, cfg_name, cfg_ships)
-
-    # Entrambi i giocatori entrano in questo loop:
-    # - Chi ha proposto aspetta la risposta
-    # - Chi ha ricevuto risponde
-    while not ev_ship_cfg.is_set():
-        triggered = threading.Event()
-
-        def check():
-            while not ev_ship_cfg.is_set() and not ev_proposal.is_set():
-                import time; time.sleep(0.05)
-            triggered.set()
-
-        threading.Thread(target=check, daemon=True).start()
-        triggered.wait()
-
-        if ev_ship_cfg.is_set():
-            break
-
-        if ev_proposal.is_set():
-            ev_proposal.clear()
-            cfg_name, cfg_ships, proposer = shared["proposal"]
-            action, new_name, new_ships = handle_proposal_terminal(
-                cfg_name, cfg_ships, proposer
-            )
-            if action == "accept":
-                server.accept_ship_config(player_id)
-                # Aspetta notify_ship_config
-            else:
-                print(f"\n  ✓ Contro-proposta inviata: {new_name}. In attesa...")
-                server.submit_ship_config(player_id, new_name, new_ships)
+    def _run_negotiation():
+        # Se il server ci ha già notificato di proporre, lo gestiamo subito
+        if ev_choose_config.is_set():
+            ev_choose_config.clear()
+            cfg_name, cfg_ships = choose_config_terminal()
+            print(f"\n  ✓ Proposta inviata: {cfg_name}. In attesa dell'avversario...")
+            server.submit_ship_config(player_id, cfg_name, cfg_ships)
+ 
+        # Loop finché il server non trasmette la config finale (ev_ship_cfg)
+        while not ev_ship_cfg.is_set():
+            triggered = threading.Event()
+ 
+            def check():
+                while not ev_ship_cfg.is_set() and not ev_proposal.is_set() and not ev_choose_config.is_set():
+                    import time; time.sleep(0.05)
+                triggered.set()
+ 
+            threading.Thread(target=check, daemon=True).start()
+            triggered.wait()
+ 
+            if ev_ship_cfg.is_set():
+                break
+ 
+            if ev_choose_config.is_set():
+                # Siamo noi a dover proporre (es. dopo reverse sul server)
+                ev_choose_config.clear()
+                cfg_name, cfg_ships = choose_config_terminal()
+                print(f"\n  ✓ Proposta inviata: {cfg_name}. In attesa dell'avversario...")
+                server.submit_ship_config(player_id, cfg_name, cfg_ships)
+ 
+            elif ev_proposal.is_set():
+                ev_proposal.clear()
+                cfg_name, cfg_ships, proposer = shared["proposal"]
+                action, new_name, new_ships = handle_proposal_terminal(cfg_name, cfg_ships, proposer)
+                if action == "accept":
+                    server.accept_ship_config(player_id)
+                    # Aspetta notify_ship_config
+                else:
+                    print(f"\n  ✓ Contro-proposta inviata: {new_name}. In attesa...")
+                    server.submit_ship_config(player_id, new_name, new_ships)
 
     while True:
+        _run_negotiation()
         ev_ship_cfg.wait()
         ev_ship_cfg.clear()
         ev_game_over.clear()
@@ -271,5 +276,5 @@ def run_terminal(player_name: str):
             print("\n  Grazie per aver giocato! Arrivederci.\n")
             break
         # Se restart: ev_ship_cfg sarà settato da notify_ship_config --> loop riparte
-
+        #
     daemon.shutdown()

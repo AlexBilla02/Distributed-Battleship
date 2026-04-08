@@ -13,10 +13,10 @@ C = {
     "surface":  "#313244",
     "surface2": "#45475a",
     "water":    "#74c7ec",
-    "ship":     "#6c7086",
+    "ship":     "#abe0a7",
     "hit":      "#f38ba8",
     "miss":     "#585b70",
-    "hover_ok": "#a6e3a1",
+    "hover_ok": "#91e38a",
     "hover_bad":"#f38ba8",
     "hover_aim":"#f9e2af",
     "text":     "#cdd6f4",
@@ -239,7 +239,6 @@ class BattleshipGUI(tk.Tk):
         pad = frm(self)
         pad.pack(expand=True)
         lbl(pad, "⚓ BATTAGLIA NAVALE", size=18, bold=True, color=C["accent"]).pack(pady=(30, 5))
-        lbl(pad, "Pyro5 · Sistema Distribuito", size=9, color=C["subtext"]).pack(pady=(0, 28))
         lbl(pad, "Il tuo nome:").pack()
         name_var = tk.StringVar(value="Giocatore")
         entry = tk.Entry(pad, textvariable=name_var, width=22,

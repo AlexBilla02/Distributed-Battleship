@@ -159,10 +159,18 @@ class BattleshipServer:
         self.pending_proposer = None
         for pid in self.player_order:
             self.players[pid]["ready"] = False
-        config_name, ships = self.ship_config
-        print(f"[SERVER] Reset — nuova partita con '{config_name}'")
-        for pid in self.player_order:
-            self._proxy(pid).notify_ship_config(config_name, list(ships))
+        self.player_order.reverse()
+
+        #per mantenere la configurazione della partita precedente, togliere commenti qui e commentare la parte successiva
+        #config_name, ships = self.ship_config
+        #print(f"[SERVER] Reset — nuova partita con '{config_name}'")
+        #for pid in self.player_order:
+        #    self._proxy(pid).notify_ship_config(config_name, list(ships))
+        #self.ship_config = None
+        
+        print(f"[SERVER] Reset — nuova negoziazione configurazione")
+        self._proxy(self.player_order[0]).notify_choose_config()
+        self._proxy(self.player_order[1]).notify_wait_config()
 
     def get_log(self) -> list:
         return list(self.match_log)
